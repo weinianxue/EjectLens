@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore EjectLens.sln
+
+      - name: Build
+        run: dotnet build EjectLens.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test EjectLens.sln -c Release --no-build --verbosity normal
+
+      - name: Publish (win-x64 portable)
+        run: >
+          dotnet publish src/EjectLens/EjectLens.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -o artifacts/publish/win-x64/EjectLens
+
+      - name: Copy docs into publish folder
+        run: |
+          copy README.md artifacts\publish\win-x64\EjectLens\
+          copy README.zh-CN.md artifacts\publish\win-x64\EjectLens\
+          copy LICENSE artifacts\publish\win-x64\EjectLens\
+
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "VERSION=v0.2.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create release zip
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          cd artifacts/publish/win-x64
+          zip -r "../../../EjectLens-${VERSION}-win-x64-portable.zip" EjectLens/
+          echo "ZIP_NAME=EjectLens-${VERSION}-win-x64-portable.zip" >> $GITHUB_ENV
+
+      - name: Read release notes
+        id: release_notes
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          NOTES_FILE="docs/release-notes/${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES=$(cat "$NOTES_FILE")
+            echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+            echo "$NOTES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+            echo "See [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) for details." >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: EjectLens ${{ steps.version.outputs.VERSION }}
+          body: ${{ steps.release_notes.outputs.NOTES }}
+          files: EjectLens-${{ steps.version.outputs.VERSION }}-win-x64-portable.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
