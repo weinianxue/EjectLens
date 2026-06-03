@@ -65,7 +65,7 @@ public sealed partial class MainForm
 
     private void SettingsButton_Click(object? sender, EventArgs e)
     {
-        using var form = new SettingsForm(_settings, _settingsService, ApplySettings);
+        using var form = new SettingsForm(_settings, _settingsService, _loc, ApplySettings);
         form.ShowDialog(this);
     }
 

@@ -37,6 +37,34 @@ public class LocalizationService
             ["EjectVetoed"] = "Windows rejected the eject request. Check for open files or applications using the drive.",
             ["EjectNotResolved"] = "Could not resolve the selected drive to a removable device instance.",
             ["EjectNeedAdmin"] = "Administrator privileges may be required to eject this device.",
+
+            // Settings dialog.
+            ["SettingsTitle"] = "EjectLens Settings",
+            ["TabGeneral"] = "General",
+            ["TabAppearance"] = "Appearance",
+            ["TabBehavior"] = "Behavior",
+            ["SettingsLanguage"] = "Language:",
+            ["LangSystemDefault"] = "System default",
+            ["LangEnglish"] = "English",
+            ["LangChinese"] = "简体中文",
+            ["SettingsTheme"] = "Theme:",
+            ["ThemeSystem"] = "System",
+            ["ThemeLight"] = "Light",
+            ["ThemeDark"] = "Dark",
+            ["SettingsDefaultSize"] = "Default size:",
+            ["SizeSmall"] = "Small (900x600)",
+            ["SizeMedium"] = "Medium (1100x700)",
+            ["SizeLarge"] = "Large (1300x850)",
+            ["SettingsRememberSize"] = "Remember size:",
+            ["SettingsStartMaximized"] = "Start maximized:",
+            ["SettingsConfirmEject"] = "Confirm before eject:",
+            ["SettingsRefreshAfterEject"] = "Refresh after eject:",
+            ["SettingsRememberDrive"] = "Remember last drive:",
+            ["SettingsDefaultTimeRange"] = "Default time range:",
+            ["Time15min"] = "15 minutes",
+            ["Time1hour"] = "1 hour",
+            ["Time2hours"] = "2 hours",
+            ["Time24hours"] = "24 hours",
         },
         ["zh-CN"] = new Dictionary<string, string>
         {
@@ -66,6 +94,34 @@ public class LocalizationService
             ["EjectVetoed"] = "Windows 拒绝了弹出请求。请检查是否有程序正在使用该磁盘。",
             ["EjectNotResolved"] = "无法将所选磁盘解析为可移动设备实例。",
             ["EjectNeedAdmin"] = "弹出该设备可能需要管理员权限。",
+
+            // Settings dialog.
+            ["SettingsTitle"] = "EjectLens 设置",
+            ["TabGeneral"] = "常规",
+            ["TabAppearance"] = "外观",
+            ["TabBehavior"] = "行为",
+            ["SettingsLanguage"] = "语言:",
+            ["LangSystemDefault"] = "跟随系统",
+            ["LangEnglish"] = "English",
+            ["LangChinese"] = "简体中文",
+            ["SettingsTheme"] = "主题:",
+            ["ThemeSystem"] = "跟随系统",
+            ["ThemeLight"] = "浅色",
+            ["ThemeDark"] = "深色",
+            ["SettingsDefaultSize"] = "默认大小:",
+            ["SizeSmall"] = "小 (900x600)",
+            ["SizeMedium"] = "中 (1100x700)",
+            ["SizeLarge"] = "大 (1300x850)",
+            ["SettingsRememberSize"] = "记住窗口大小:",
+            ["SettingsStartMaximized"] = "启动时最大化:",
+            ["SettingsConfirmEject"] = "弹出前确认:",
+            ["SettingsRefreshAfterEject"] = "弹出后刷新:",
+            ["SettingsRememberDrive"] = "记住上次选择的磁盘:",
+            ["SettingsDefaultTimeRange"] = "默认时间范围:",
+            ["Time15min"] = "15 分钟",
+            ["Time1hour"] = "1 小时",
+            ["Time2hours"] = "2 小时",
+            ["Time24hours"] = "24 小时",
         }
     };
 
@@ -109,9 +165,6 @@ public class LocalizationService
         return key;
     }
 
-    /// <summary>
-    /// Returns the current language code (e.g. "en-US", "zh-CN").
-    /// </summary>
     public string CurrentLanguage => _language;
 
     public bool IsZhCn => _language == "zh-CN";

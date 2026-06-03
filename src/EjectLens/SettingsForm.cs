@@ -5,17 +5,32 @@ namespace EjectLens;
 
 /// <summary>
 /// Application settings dialog with tabs for General, Appearance, and Behavior.
+/// Uses LocalizationService for all visible labels.
 /// </summary>
 public sealed class SettingsForm : Form
 {
     private readonly AppSettings _settings;
     private readonly SettingsService _settingsService;
+    private readonly LocalizationService _loc;
     private readonly Action _onSettingsChanged;
 
     private readonly TabControl _tabControl = new();
     private readonly Button _okButton = new();
     private readonly Button _cancelButton = new();
     private readonly Button _applyButton = new();
+
+    private readonly TabPage _tabGeneral = new();
+    private readonly TabPage _tabAppearance = new();
+    private readonly TabPage _tabBehavior = new();
+    private readonly Label _langLabel = new();
+    private readonly Label _themeLabel = new();
+    private readonly Label _sizeLabel = new();
+    private readonly Label _rememberSizeLabel = new();
+    private readonly Label _startMaxLabel = new();
+    private readonly Label _confirmEjectLabel = new();
+    private readonly Label _refreshAfterEjectLabel = new();
+    private readonly Label _rememberDriveLabel = new();
+    private readonly Label _defaultTimeRangeLabel = new();
 
     private readonly ComboBox _languageCombo = new();
     private readonly ComboBox _themeCombo = new();
@@ -27,13 +42,15 @@ public sealed class SettingsForm : Form
     private readonly CheckBox _rememberDriveCheck = new();
     private readonly ComboBox _defaultTimeRangeCombo = new();
 
-    public SettingsForm(AppSettings settings, SettingsService settingsService, Action onSettingsChanged)
+    public SettingsForm(AppSettings settings, SettingsService settingsService,
+        LocalizationService loc, Action onSettingsChanged)
     {
         _settings = settings;
         _settingsService = settingsService;
+        _loc = loc;
         _onSettingsChanged = onSettingsChanged;
 
-        Text = "EjectLens Settings";
+        Text = _loc.Get("SettingsTitle");
         Size = new Size(500, 420);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -42,6 +59,7 @@ public sealed class SettingsForm : Form
         Font = new Font("Segoe UI", 9F);
 
         BuildUi();
+        ApplyLocalization();
         LoadSettingsToUi();
     }
 
@@ -49,9 +67,14 @@ public sealed class SettingsForm : Form
     {
         _tabControl.Dock = DockStyle.Top;
         _tabControl.Height = 300;
-        _tabControl.TabPages.Add(BuildGeneralTab());
-        _tabControl.TabPages.Add(BuildAppearanceTab());
-        _tabControl.TabPages.Add(BuildBehaviorTab());
+
+        BuildGeneralTab();
+        BuildAppearanceTab();
+        BuildBehaviorTab();
+
+        _tabControl.TabPages.Add(_tabGeneral);
+        _tabControl.TabPages.Add(_tabAppearance);
+        _tabControl.TabPages.Add(_tabBehavior);
 
         var buttonPanel = new FlowLayoutPanel
         {
@@ -81,9 +104,8 @@ public sealed class SettingsForm : Form
         Controls.Add(buttonPanel);
     }
 
-    private TabPage BuildGeneralTab()
+    private void BuildGeneralTab()
     {
-        var page = new TabPage("General");
         var table = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -94,29 +116,21 @@ public sealed class SettingsForm : Form
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
 
-        var langLabel = new Label
-        {
-            Text = "Language:",
-            TextAlign = ContentAlignment.MiddleRight,
-            Anchor = AnchorStyles.Right
-        };
-        table.Controls.Add(langLabel, 0, 0);
+        _langLabel.Text = "Language:";
+        _langLabel.TextAlign = ContentAlignment.MiddleRight;
+        _langLabel.Anchor = AnchorStyles.Right;
+        table.Controls.Add(_langLabel, 0, 0);
 
         _languageCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _languageCombo.Items.Add("System default");
-        _languageCombo.Items.Add("English");
-        _languageCombo.Items.Add("简体中文");
         _languageCombo.Anchor = AnchorStyles.Left;
         _languageCombo.Width = 160;
         table.Controls.Add(_languageCombo, 1, 0);
 
-        page.Controls.Add(table);
-        return page;
+        _tabGeneral.Controls.Add(table);
     }
 
-    private TabPage BuildAppearanceTab()
+    private void BuildAppearanceTab()
     {
-        var page = new TabPage("Appearance");
         var table = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -127,39 +141,31 @@ public sealed class SettingsForm : Form
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65F));
 
-        table.Controls.Add(MakeLabel("Theme:"), 0, 0);
+        table.Controls.Add(MakeLabelRef(_themeLabel), 0, 0);
         _themeCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _themeCombo.Items.Add("System");
-        _themeCombo.Items.Add("Light");
-        _themeCombo.Items.Add("Dark");
         _themeCombo.Anchor = AnchorStyles.Left;
         _themeCombo.Width = 120;
         table.Controls.Add(_themeCombo, 1, 0);
 
-        table.Controls.Add(MakeLabel("Default size:"), 0, 1);
+        table.Controls.Add(MakeLabelRef(_sizeLabel), 0, 1);
         _windowSizeCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _windowSizeCombo.Items.Add("Small (900x600)");
-        _windowSizeCombo.Items.Add("Medium (1100x700)");
-        _windowSizeCombo.Items.Add("Large (1300x850)");
         _windowSizeCombo.Anchor = AnchorStyles.Left;
         _windowSizeCombo.Width = 160;
         table.Controls.Add(_windowSizeCombo, 1, 1);
 
-        table.Controls.Add(MakeLabel("Remember size:"), 0, 2);
+        table.Controls.Add(MakeLabelRef(_rememberSizeLabel), 0, 2);
         _rememberSizeCheck.Anchor = AnchorStyles.Left;
         table.Controls.Add(_rememberSizeCheck, 1, 2);
 
-        table.Controls.Add(MakeLabel("Start maximized:"), 0, 3);
+        table.Controls.Add(MakeLabelRef(_startMaxLabel), 0, 3);
         _startMaximizedCheck.Anchor = AnchorStyles.Left;
         table.Controls.Add(_startMaximizedCheck, 1, 3);
 
-        page.Controls.Add(table);
-        return page;
+        _tabAppearance.Controls.Add(table);
     }
 
-    private TabPage BuildBehaviorTab()
+    private void BuildBehaviorTab()
     {
-        var page = new TabPage("Behavior");
         var table = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -170,39 +176,98 @@ public sealed class SettingsForm : Form
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60F));
 
-        table.Controls.Add(MakeLabel("Confirm before eject:"), 0, 0);
+        table.Controls.Add(MakeLabelRef(_confirmEjectLabel), 0, 0);
         _confirmEjectCheck.Anchor = AnchorStyles.Left;
         table.Controls.Add(_confirmEjectCheck, 1, 0);
 
-        table.Controls.Add(MakeLabel("Refresh after eject:"), 0, 1);
+        table.Controls.Add(MakeLabelRef(_refreshAfterEjectLabel), 0, 1);
         _refreshAfterEjectCheck.Anchor = AnchorStyles.Left;
         table.Controls.Add(_refreshAfterEjectCheck, 1, 1);
 
-        table.Controls.Add(MakeLabel("Remember last drive:"), 0, 2);
+        table.Controls.Add(MakeLabelRef(_rememberDriveLabel), 0, 2);
         _rememberDriveCheck.Anchor = AnchorStyles.Left;
         table.Controls.Add(_rememberDriveCheck, 1, 2);
 
-        table.Controls.Add(MakeLabel("Default time range:"), 0, 3);
+        table.Controls.Add(MakeLabelRef(_defaultTimeRangeLabel), 0, 3);
         _defaultTimeRangeCombo.DropDownStyle = ComboBoxStyle.DropDownList;
-        _defaultTimeRangeCombo.Items.Add("15 minutes");
-        _defaultTimeRangeCombo.Items.Add("1 hour");
-        _defaultTimeRangeCombo.Items.Add("2 hours");
-        _defaultTimeRangeCombo.Items.Add("24 hours");
         _defaultTimeRangeCombo.Anchor = AnchorStyles.Left;
         _defaultTimeRangeCombo.Width = 140;
         table.Controls.Add(_defaultTimeRangeCombo, 1, 3);
 
-        page.Controls.Add(table);
-        return page;
+        _tabBehavior.Controls.Add(table);
     }
 
-    private static Label MakeLabel(string text) => new()
+    private static Label MakeLabelRef(Label label)
     {
-        Text = text,
-        TextAlign = ContentAlignment.MiddleRight,
-        Anchor = AnchorStyles.Right,
-        AutoSize = true
-    };
+        label.TextAlign = ContentAlignment.MiddleRight;
+        label.Anchor = AnchorStyles.Right;
+        label.AutoSize = true;
+        return label;
+    }
+
+    private void ApplyLocalization()
+    {
+        Text = _loc.Get("SettingsTitle");
+        _tabGeneral.Text = _loc.Get("TabGeneral");
+        _tabAppearance.Text = _loc.Get("TabAppearance");
+        _tabBehavior.Text = _loc.Get("TabBehavior");
+
+        _langLabel.Text = _loc.Get("SettingsLanguage");
+        _themeLabel.Text = _loc.Get("SettingsTheme");
+        _sizeLabel.Text = _loc.Get("SettingsDefaultSize");
+        _rememberSizeLabel.Text = _loc.Get("SettingsRememberSize");
+        _startMaxLabel.Text = _loc.Get("SettingsStartMaximized");
+        _confirmEjectLabel.Text = _loc.Get("SettingsConfirmEject");
+        _refreshAfterEjectLabel.Text = _loc.Get("SettingsRefreshAfterEject");
+        _rememberDriveLabel.Text = _loc.Get("SettingsRememberDrive");
+        _defaultTimeRangeLabel.Text = _loc.Get("SettingsDefaultTimeRange");
+
+        PopulateLanguageCombo();
+        PopulateThemeCombo();
+        PopulateSizeCombo();
+        PopulateTimeRangeCombo();
+    }
+
+    private void PopulateLanguageCombo()
+    {
+        var idx = _languageCombo.SelectedIndex;
+        _languageCombo.Items.Clear();
+        _languageCombo.Items.Add(_loc.Get("LangSystemDefault"));
+        _languageCombo.Items.Add(_loc.Get("LangEnglish"));
+        _languageCombo.Items.Add(_loc.Get("LangChinese"));
+        _languageCombo.SelectedIndex = idx >= 0 && idx < 3 ? idx : 0;
+    }
+
+    private void PopulateThemeCombo()
+    {
+        var idx = _themeCombo.SelectedIndex;
+        _themeCombo.Items.Clear();
+        _themeCombo.Items.Add(_loc.Get("ThemeSystem"));
+        _themeCombo.Items.Add(_loc.Get("ThemeLight"));
+        _themeCombo.Items.Add(_loc.Get("ThemeDark"));
+        _themeCombo.SelectedIndex = idx >= 0 && idx < 3 ? idx : 0;
+    }
+
+    private void PopulateSizeCombo()
+    {
+        var idx = _windowSizeCombo.SelectedIndex;
+        _windowSizeCombo.Items.Clear();
+        _windowSizeCombo.Items.Add(_loc.Get("SizeSmall"));
+        _windowSizeCombo.Items.Add(_loc.Get("SizeMedium"));
+        _windowSizeCombo.Items.Add(_loc.Get("SizeLarge"));
+        _windowSizeCombo.SelectedIndex = idx >= 0 && idx < 3 ? idx : 0;
+    }
+
+    private void PopulateTimeRangeCombo()
+    {
+        var idx = _defaultTimeRangeCombo.SelectedIndex;
+        _defaultTimeRangeCombo.Items.Clear();
+        _defaultTimeRangeCombo.Items.Add(_loc.Get("Time15min"));
+        _defaultTimeRangeCombo.Items.Add(_loc.Get("Time1hour"));
+        _defaultTimeRangeCombo.Items.Add(_loc.Get("Time2hours"));
+        _defaultTimeRangeCombo.Items.Add(_loc.Get("Time24hours"));
+        _defaultTimeRangeCombo.SelectedIndex = idx >= 0 && idx < 4 ? idx : 2;
+    }
 
     private void LoadSettingsToUi()
     {
@@ -219,6 +284,7 @@ public sealed class SettingsForm : Form
             "dark" => 2,
             _ => 0
         };
+
         _windowSizeCombo.SelectedIndex = _settings.DefaultWindowSize switch
         {
             "small" => 0,

@@ -58,7 +58,15 @@ public class LocalizationServiceTests
             "Path", "CommandLine", "AffectedDevice", "State",
             "EjectConfirmTitle", "EjectConfirmMessage",
             "EjectSuccess", "EjectFailed", "EjectVetoed",
-            "EjectNotResolved", "EjectNeedAdmin"
+            "EjectNotResolved", "EjectNeedAdmin",
+            "SettingsTitle", "TabGeneral", "TabAppearance", "TabBehavior",
+            "SettingsLanguage", "LangSystemDefault", "LangEnglish", "LangChinese",
+            "SettingsTheme", "ThemeSystem", "ThemeLight", "ThemeDark",
+            "SettingsDefaultSize", "SizeSmall", "SizeMedium", "SizeLarge",
+            "SettingsRememberSize", "SettingsStartMaximized",
+            "SettingsConfirmEject", "SettingsRefreshAfterEject",
+            "SettingsRememberDrive", "SettingsDefaultTimeRange",
+            "Time15min", "Time1hour", "Time2hours", "Time24hours"
         };
 
         var loc = new LocalizationService();
