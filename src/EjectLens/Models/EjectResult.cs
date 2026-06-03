@@ -2,6 +2,7 @@ namespace EjectLens.Models;
 
 /// <summary>
 /// Result of a safe-eject attempt for a removable drive.
+/// Contains detailed information about every candidate device node tried.
 /// </summary>
 public sealed class EjectResult
 {
@@ -10,25 +11,34 @@ public sealed class EjectResult
     public string DriveLetter { get; init; } = string.Empty;
     public DateTime AttemptTime { get; init; } = DateTime.Now;
 
-    /// <summary>
-    /// Veto type from CM_Request_Device_Eject, if the request was denied.
-    /// </summary>
-    public string? VetoType { get; init; }
+    public int ReturnCode { get; init; }
+    public string ReturnCodeName => Native.DeviceEjectNative.GetReturnCodeName(ReturnCode);
 
-    /// <summary>
-    /// Veto name (friendly description), if provided by Windows.
-    /// </summary>
+    public string? VetoType { get; init; }
     public string? VetoName { get; init; }
 
-    /// <summary>
-    /// Native return code from CM_Request_Device_Eject.
-    /// </summary>
-    public int NativeReturnCode { get; init; }
+    public string? SelectedDeviceInstanceId { get; init; }
 
     /// <summary>
-    /// PNPDeviceID that was passed to the eject API.
+    /// The candidate that succeeded, if any.
     /// </summary>
-    public string? PnpDeviceId { get; init; }
+    public EjectCandidate? SuccessfulCandidate { get; init; }
+
+    /// <summary>
+    /// All candidates that were attempted, in order.
+    /// </summary>
+    public List<EjectCandidate> AttemptedCandidates { get; init; } = [];
+
+    /// <summary>
+    /// Human-readable suggestions for next steps based on the failure mode.
+    /// </summary>
+    public List<string> SuggestedNextSteps { get; init; } = [];
+
+    /// <summary>
+    /// Whether the safe volume-level fallback was attempted.
+    /// </summary>
+    public bool FallbackAttempted { get; init; }
+    public string? FallbackResult { get; init; }
 
     public string ToReportText()
     {
@@ -36,10 +46,10 @@ public sealed class EjectResult
         lines.Add($"  Drive:       {DriveLetter}");
         lines.Add($"  Time:        {AttemptTime:yyyy-MM-dd HH:mm:ss}");
         lines.Add($"  Result:      {(Success ? "Success" : "Failed")}");
-        lines.Add($"  Return code: {NativeReturnCode}");
+        lines.Add($"  Return code: {ReturnCode} / {ReturnCodeName}");
 
-        if (!string.IsNullOrEmpty(PnpDeviceId))
-            lines.Add($"  Device:      {PnpDeviceId}");
+        if (SuccessfulCandidate != null)
+            lines.Add($"  Successful:  {SuccessfulCandidate.ToSummary()}");
 
         if (!Success)
         {
@@ -50,6 +60,29 @@ public sealed class EjectResult
         }
 
         lines.Add($"  Message:     {Message}");
+
+        if (AttemptedCandidates.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("  Attempted device nodes:");
+            foreach (var c in AttemptedCandidates)
+                lines.Add($"    {c.ToSummary()}");
+        }
+
+        if (FallbackAttempted)
+        {
+            lines.Add(string.Empty);
+            lines.Add($"  Volume fallback: {(FallbackResult ?? "not attempted")}");
+        }
+
+        if (SuggestedNextSteps.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("  Suggested next steps:");
+            foreach (var step in SuggestedNextSteps)
+                lines.Add($"    - {step}");
+        }
+
         return string.Join(Environment.NewLine, lines);
     }
 
@@ -59,16 +92,24 @@ public sealed class EjectResult
             Success = false,
             DriveLetter = driveLetter,
             Message = message,
-            NativeReturnCode = code
+            ReturnCode = code,
+            SuggestedNextSteps =
+            [
+                "Try running EjectLens as administrator.",
+                "Close any open files and folders on the drive.",
+                "Use 'Scan Selected Path' to check for file locks.",
+                "Wait a few seconds and try again.",
+            ]
         };
 
-    public static EjectResult Ok(string driveLetter, string pnpDeviceId)
+    public static EjectResult Ok(string driveLetter, EjectCandidate candidate)
         => new()
         {
             Success = true,
             DriveLetter = driveLetter,
-            PnpDeviceId = pnpDeviceId,
             Message = "Windows reported that the device can be safely removed.",
-            NativeReturnCode = 0
+            ReturnCode = 0,
+            SuccessfulCandidate = candidate,
+            SelectedDeviceInstanceId = candidate.DeviceInstanceId
         };
 }

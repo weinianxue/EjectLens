@@ -284,6 +284,7 @@ public sealed partial class MainForm
             if (result != DialogResult.Yes) return;
         }
 
+        _ejectButton.Enabled = false;
         SetStatus("Requesting safe eject...");
         Application.UseWaitCursor = true;
 
@@ -294,16 +295,19 @@ public sealed partial class MainForm
             if (_lastEjectResult.Success)
             {
                 SetStatus(_loc.Get("EjectSuccess"));
-                _detailTextBox.Text = _lastEjectResult.ToReportText();
-
                 if (_settings.RefreshAfterEject)
                     LoadDrives();
             }
             else
             {
-                SetStatus(_lastEjectResult.Message);
-                _detailTextBox.Text = _lastEjectResult.ToReportText();
+                var vetoInfo = "";
+                if (!string.IsNullOrEmpty(_lastEjectResult.VetoType))
+                    vetoInfo = $" [Veto: {_lastEjectResult.VetoType}]";
+                SetStatus($"Eject failed — {_lastEjectResult.ReturnCodeName}{vetoInfo}. " +
+                    "See detail panel for full diagnostics.");
             }
+
+            _detailTextBox.Text = _lastEjectResult.ToReportText();
         }
         catch (Exception ex)
         {
@@ -312,6 +316,7 @@ public sealed partial class MainForm
         finally
         {
             Application.UseWaitCursor = false;
+            _ejectButton.Enabled = _selectedDrive != null;
         }
     }
 
