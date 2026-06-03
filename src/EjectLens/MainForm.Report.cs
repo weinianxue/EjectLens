@@ -6,8 +6,6 @@ namespace EjectLens;
 
 public sealed partial class MainForm
 {
-    // ── Report Actions ──────────────────────────────────────────
-
     private void CopyReportButton_Click(object? sender, EventArgs e)
     {
         try
@@ -65,6 +63,17 @@ public sealed partial class MainForm
             UnmatchedEvents = unmatched
         };
 
-        return ReportService.GenerateReport(model);
+        var report = ReportService.GenerateReport(model);
+
+        if (_lastEjectResult != null)
+        {
+            report += Environment.NewLine
+                + "── Eject Attempt ──" + Environment.NewLine
+                + Environment.NewLine
+                + _lastEjectResult.ToReportText()
+                + Environment.NewLine;
+        }
+
+        return report;
     }
 }

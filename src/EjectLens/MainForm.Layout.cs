@@ -6,7 +6,6 @@ public sealed partial class MainForm
 {
     private void InitializeLayout()
     {
-        // Main layout: rows = top (auto), center (fill), bottom (auto).
         _mainLayout.Dock = DockStyle.Fill;
         _mainLayout.ColumnCount = 1;
         _mainLayout.RowCount = 3;
@@ -15,18 +14,18 @@ public sealed partial class MainForm
         _mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         _mainLayout.Padding = new Padding(8);
 
-        // Top panel: drive selector, refresh, time range, scan button.
         _topPanel.Dock = DockStyle.Fill;
         _topPanel.AutoSize = true;
         _topPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        _topPanel.ColumnCount = 8;
+        _topPanel.ColumnCount = 9;
         _topPanel.RowCount = 1;
         _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 35F));
+        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
         _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 16));
+        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 12));
         _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
+        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+        _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _topPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40F));
 
@@ -71,6 +70,11 @@ public sealed partial class MainForm
         _scanEventsButton.Click += ScanEventsButton_Click;
         _topPanel.Controls.Add(_scanEventsButton, 6, 0);
 
+        _settingsButton.Text = "Settings";
+        _settingsButton.AutoSize = true;
+        _settingsButton.Click += SettingsButton_Click;
+        _topPanel.Controls.Add(_settingsButton, 7, 0);
+
         _centerSplit.Dock = DockStyle.Fill;
         _centerSplit.Orientation = Orientation.Vertical;
         _centerSplit.SplitterDistance = 700;
@@ -104,6 +108,11 @@ public sealed partial class MainForm
         _bottomPanel.FlowDirection = FlowDirection.LeftToRight;
         _bottomPanel.Padding = new Padding(0, 6, 0, 0);
 
+        _ejectButton.Text = "Eject Selected Drive";
+        _ejectButton.AutoSize = true;
+        _ejectButton.Enabled = false;
+        _ejectButton.Click += EjectButton_Click;
+
         _copyReportButton.Text = "Copy Report";
         _copyReportButton.AutoSize = true;
         _copyReportButton.Click += CopyReportButton_Click;
@@ -124,6 +133,7 @@ public sealed partial class MainForm
         _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
         _statusLabel.Padding = new Padding(12, 4, 0, 0);
 
+        _bottomPanel.Controls.Add(_ejectButton);
         _bottomPanel.Controls.Add(_copyReportButton);
         _bottomPanel.Controls.Add(_saveReportButton);
         _bottomPanel.Controls.Add(_openTaskManagerButton);
@@ -181,7 +191,7 @@ public sealed partial class MainForm
         });
         _eventsGrid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "Device", HeaderText = "Affected Device", DataPropertyName = "DeviceInstanceId",
+            Name = "AffectedDevice", HeaderText = "Affected Device", DataPropertyName = "DeviceInstanceId",
             FillWeight = 120, MinimumWidth = 100
         });
         _eventsGrid.Columns.Add(new DataGridViewTextBoxColumn

@@ -6,8 +6,6 @@ namespace EjectLens;
 
 public sealed partial class MainForm
 {
-    // ── Drive Selection ──────────────────────────────────────────
-
     private void LoadDrives()
     {
         try
@@ -19,17 +17,22 @@ public sealed partial class MainForm
 
             if (_drives.Count == 0)
             {
-                _driveCombo.Items.Add("(no removable drives found)");
+                _driveCombo.Items.Add(_loc.Get("NoDrives"));
                 _driveCombo.SelectedIndex = 0;
                 _selectedDrive = null;
+                _ejectButton.Enabled = false;
             }
             else
             {
-                foreach (var drive in _drives)
+                int selectIndex = 0;
+                for (int i = 0; i < _drives.Count; i++)
                 {
-                    _driveCombo.Items.Add(drive);
+                    _driveCombo.Items.Add(_drives[i]);
+                    if (_settings.RememberLastDrive
+                        && _drives[i].DriveLetter == _settings.LastSelectedDrive)
+                        selectIndex = i;
                 }
-                _driveCombo.SelectedIndex = 0;
+                _driveCombo.SelectedIndex = selectIndex;
             }
             _driveCombo.EndUpdate();
         }
@@ -44,11 +47,13 @@ public sealed partial class MainForm
         if (_driveCombo.SelectedItem is DriveInfoModel drive)
         {
             _selectedDrive = drive;
+            _ejectButton.Enabled = true;
             UpdateMatchStatus();
         }
         else
         {
             _selectedDrive = null;
+            _ejectButton.Enabled = false;
         }
     }
 
@@ -58,7 +63,11 @@ public sealed partial class MainForm
         SetStatus("Drive list refreshed.");
     }
 
-    // ── Event Scanning ───────────────────────────────────────────
+    private void SettingsButton_Click(object? sender, EventArgs e)
+    {
+        using var form = new SettingsForm(_settings, _settingsService, ApplySettings);
+        form.ShowDialog(this);
+    }
 
     private void ScanEventsButton_Click(object? sender, EventArgs e)
     {
@@ -99,8 +108,6 @@ public sealed partial class MainForm
         }
     }
 
-    // ── Grid Selection ───────────────────────────────────────────
-
     private void EventsGrid_SelectionChanged(object? sender, EventArgs e)
     {
         if (_eventsGrid.SelectedRows.Count == 0)
@@ -124,8 +131,6 @@ public sealed partial class MainForm
 
         ShowEventDetail(evt);
     }
-
-    // ── Match Status ────────────────────────────────────────────
 
     private void UpdateMatchStatus()
     {
@@ -171,8 +176,6 @@ public sealed partial class MainForm
         RefreshEventsGrid();
     }
 
-    // ── Grid Refresh ────────────────────────────────────────────
-
     private void RefreshEventsGrid()
     {
         _eventsGrid.DataSource = null;
@@ -216,8 +219,6 @@ public sealed partial class MainForm
             }
         }
     }
-
-    // ── Detail View ─────────────────────────────────────────────
 
     private void ShowEventDetail(EjectBlockEvent evt)
     {
@@ -267,7 +268,52 @@ public sealed partial class MainForm
         _detailTextBox.Text = string.Join(Environment.NewLine, lines);
     }
 
-    // ── File Scan ────────────────────────────────────────────────
+    private void EjectButton_Click(object? sender, EventArgs e)
+    {
+        if (_selectedDrive == null) return;
+
+        if (_settings.ConfirmBeforeEject)
+        {
+            var result = MessageBox.Show(
+                this,
+                _loc.Get("EjectConfirmMessage"),
+                _loc.Get("EjectConfirmTitle"),
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (result != DialogResult.Yes) return;
+        }
+
+        SetStatus("Requesting safe eject...");
+        Application.UseWaitCursor = true;
+
+        try
+        {
+            _lastEjectResult = _ejectService.EjectDrive(_selectedDrive.DriveLetter + "\\");
+
+            if (_lastEjectResult.Success)
+            {
+                SetStatus(_loc.Get("EjectSuccess"));
+                _detailTextBox.Text = _lastEjectResult.ToReportText();
+
+                if (_settings.RefreshAfterEject)
+                    LoadDrives();
+            }
+            else
+            {
+                SetStatus(_lastEjectResult.Message);
+                _detailTextBox.Text = _lastEjectResult.ToReportText();
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Eject failed: {ex.Message}");
+        }
+        finally
+        {
+            Application.UseWaitCursor = false;
+        }
+    }
 
     private void OpenTaskManagerButton_Click(object? sender, EventArgs e)
     {
