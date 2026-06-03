@@ -53,6 +53,11 @@ Desktop.ini
 *.swp
 *~
 
+## Release artifacts (keep out of source tree)
+*.zip
+*.nupkg
+publish/
+
 ## AI / prompt files (do not commit)
 .claude/
 CLAUDE.md
